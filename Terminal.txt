@@ -1,0 +1,194 @@
+import java.lang.Thread;
+
+public class Terminal {
+    private final int delayMillis;
+    private final boolean paddedOutput; // should reduce flickering
+    private final int messageDelayMillis;
+    
+    private String lastMsg;
+    
+    private static final String FORM_FEED = "\u000C";
+
+    public Terminal(int delayMillis, int messageDelayMillis) {
+        this.delayMillis = delayMillis;
+        this.messageDelayMillis = messageDelayMillis;
+        this.paddedOutput = true;
+    }
+    
+    void clsPrintFrame(int n, Animation anim) {
+        clsPrintFrame(n, anim, true); 
+    }
+    
+    void clsPrintFrame(int n, Animation anim, boolean showInfo) {
+        String frame = anim.frame(n);
+        int newlines = U.countOccs("\n", frame);
+        frame += U.repeat("\n", Animations.SCREEN_HEIGHT - newlines);
+        frame += anim.msg();
+        
+        // Display current iteration #.
+        if(showInfo) frame += ", iteration #" + n + ", delay: " + delayMillis + " ms";
+        
+        lastMsg = frame;
+        clearAndPrint(frame);
+    }
+    
+    void clsPrintFrameVD(int n, VariableDelayAnimation anim) {
+        clsPrintFrameVD(n, anim, true); 
+    }
+    
+    void clsPrintFrameVD(int n, VariableDelayAnimation anim, boolean showInfo) {
+        String frame = anim.frame(n);
+        int newlines = U.countOccs("\n", frame);
+        frame += U.repeat("\n", Animations.SCREEN_HEIGHT - newlines);
+        
+        // Display current delay at the bottom.
+        if(showInfo) {
+            String msg = anim.msg();
+            if(msg.equals("")) {
+                frame += "Current delay: " + anim.delay(n) + " ms";
+            } else {
+                frame += msg + ", current delay: " + anim.delay(n) + " ms";
+            }
+        }
+        
+        lastMsg = frame;
+        clearAndPrint(frame);
+    }
+
+    void clearAndPrint(String s) {
+        System.out.println(FORM_FEED + s);
+    }
+    
+    void clsPrintSleep(int n, Animation anim) {
+        clsPrintFrame(n, anim);
+        sleep();
+    }
+
+    void clsPrintSleepVD(int n, VariableDelayAnimation anim) {
+        clsPrintFrameVD(n, anim);
+        sleepVD(n, anim);
+    }
+    
+    void fadeOutLinear(int delay) {
+        fadeOutLinear(delay, 1);
+    }
+    
+    void fadeOutLinear(int delay, int blockSize) {
+        fadeOut(delay, blockSize, false);
+    }
+    
+    void fadeOutRandom(int delay) {
+        fadeOutRandom(delay, 1);
+    }
+    
+    void fadeOutRandom(int delay, int blockSize) {
+        fadeOut(delay, blockSize, true);
+    }
+        
+    void fadeOut(int delay, int blockSize, boolean random) {
+        String s = this.lastMsg;
+        int numNS = 0;
+        
+        for(char c : s.toCharArray()) {
+            if(!(c == ' ' || c == '\n')) {
+                numNS++;
+            }
+        }
+        
+        
+        int[] nsIxs = new int[numNS];
+        int count = 0;
+        char c;
+        for(int i = 0; i < s.length(); ++i) {
+            c = s.charAt(i);
+            if(!(c == ' ' || c == '\n')) {
+                nsIxs[count++] = i;
+            }
+        }
+                
+        if(random) U.fisherYatesShuffle(nsIxs);
+        
+        int blk = 0;
+        StringBuffer buf = new StringBuffer(s);        
+        for(int ix : nsIxs) {
+            buf.setCharAt(ix, ' ');
+            if(blk++ % blockSize == 0) {
+                clearAndPrint(buf.toString());
+                sleep(delay);
+            }
+        }
+    }
+    
+    void displayLinewise(String s) {
+        displayLinewise(s, this.messageDelayMillis);
+    }
+    
+    void displayLinewise(String s, int messageDelayMillis) {
+        displayLinewiseEndDelay(s, messageDelayMillis, messageDelayMillis);
+    }
+    
+    void displayLinewiseEndDelay(String s, int endDelay) {
+        displayLinewiseEndDelay(s, this.messageDelayMillis, endDelay);
+    }
+    
+    void displayLinewiseEndDelay(String s, int messageDelayMillis, int endDelay) {
+        String[] lines = s.split("\n");
+        int len = lines.length;
+        String[] msgs = new String[len];
+        
+        msgs[len - 1] = s;
+        
+        for(int i = len - 1; i > 0; --i) {
+            lines[i] = U.spaces(lines[i].length());
+            msgs[i - 1] = U.concatStrs(lines);
+        }
+        
+        // Now display
+        for(int i = 0; i < len; ++i) {
+            displayAndSleep(msgs[i], messageDelayMillis);
+        }
+        
+        sleep(endDelay - messageDelayMillis);
+    }
+    
+    void displayAndSleep(String s) {
+        displayAndSleep(s, this.messageDelayMillis);
+    }
+    
+    void displayAndSleep(String s, int messageDelayMillis) {
+        clsPrintFrame(0, Animations.makeStaticMsg(s), false);
+        try {
+            Thread.sleep(messageDelayMillis);
+        } catch (Exception e) {}
+    }
+
+    void sleep() {
+        sleep(delayMillis);
+    }
+    
+    void sleep(int delayMillis) {
+        try {
+            Thread.sleep(delayMillis);
+        } catch (Exception e) {}
+    }
+    
+    void sleepVD(int n, VariableDelayAnimation anim) {
+        try {
+            Thread.sleep(anim.delay(n));
+        } catch(Exception e) {}
+    }
+
+    void animate(Animation anim, int startTime, int endTime) {
+        for(int i = startTime; i < endTime; ++i) {
+            clsPrintSleep(i, anim);
+        }
+    }
+
+    void animateVD(VariableDelayAnimation anim, int startTime, int endTime) {
+        for(int i = startTime; i < endTime; ++i) {
+            clsPrintSleepVD(i, anim);
+            try {
+                if(System.in.available() != 0) System.exit(0); } catch (Exception e) {}
+        }
+    }
+}

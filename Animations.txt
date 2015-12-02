@@ -1,0 +1,260 @@
+﻿interface Animation {
+    String msg();
+    String frame(int t);
+}
+
+interface VariableDelayAnimation extends Animation {
+    int delay(int t);
+}
+
+interface YesNo {
+    String msg();
+    boolean onLocus(int x, int y, int t);
+}
+
+interface Message {
+    String msg();
+}
+
+public class Animations {
+    public static final int SCREEN_HEIGHT = 32;
+    public static final int SCREEN_WIDTH  = 168;
+
+    // Ah, the unholy things we must do for first-class functions in Java . . .
+    static Animation convertToAnim(final YesNo yn) {
+        return new Animation() {
+            public String msg() { 
+                return yn.msg(); 
+            }
+
+            public String frame(int t) {
+                String r = "";
+                for(int y = 0; y < SCREEN_HEIGHT; ++y) {
+                    for(int x = 0; x < SCREEN_WIDTH; ++x) {
+                        if(yn.onLocus(x, y, t)) {
+                            r += "#";
+                        } else {
+                            r += " ";
+                        }
+                    }
+                    r += "\n";
+                }
+                return r;
+            }
+        };
+    }
+    
+    static Animation convertToAnim(final Message m) {
+        return new Animation() {
+            public String msg() { 
+                return "";
+            }
+
+            public String frame(int t) {
+                String[] lns = m.msg().split("\n");
+                int height = lns.length;
+                int maxWidth = 0;
+                for(String s : lns) maxWidth = Math.max(maxWidth, s.length());
+                
+                String r = U.repeat("\n", (SCREEN_HEIGHT - height) / 2);
+                String leftSpace = U.spaces((SCREEN_WIDTH - maxWidth) / 2);
+                for(String s : lns) {
+                    r += leftSpace + s + "\n";
+                }
+                return r;
+            }
+        };
+    }
+
+    static Animation makeStaticMsg(final String s) {
+        return convertToAnim(new Message() {
+            public String msg() {
+                return s;
+            }
+        });
+    }
+    
+    // Prints a kind of diagonal across the screen.
+    static final Animation MARCHING_ARROWS = new Animation() {
+            public String msg() { return ""; }
+
+            public String frame(int t) {
+                String r = "";
+                for(int i = 0; i < SCREEN_HEIGHT; ++i) {
+                    r += (U.spaces(2 * t + i) + ">\n");
+                }
+                return r;
+            }
+        };  
+
+    // A moving o
+    // WARNING: t must be <= SCREEN_HEIGHT! (excitement, not factorial)
+    static final Animation MOVING_O = new Animation() {
+            public String msg() { return ""; }
+
+            public String frame(int t) {
+                String r = "";
+                for(int i = 0; i < SCREEN_HEIGHT; ++i) {
+                    if(i == t) r += (U.spaces(2 * t + 2 * i) + "o");
+                    r += "\n";
+                }
+                return r;
+            }
+        };
+
+    // A fat moving disk.
+    static final Animation CIRCLE = convertToAnim(
+            new YesNo() {
+                public String msg() { return ""; }
+
+                public boolean onLocus(int x, int y, int t) {
+                    int x2 = x - 2*t;
+                    int y2 = y - t;
+                    return Math.abs(x2*x2 + 6*y2*y2) < 300;
+                }
+            }
+        );
+
+    static final Animation SINE = convertToAnim(
+            new YesNo() {
+                public String msg() { return ""; }
+
+                public boolean onLocus(int x, int y, int t) {
+                    double pi = Math.PI;
+                    double x2 = (x + 3*t) / (2*pi);
+                    double y2 = y / (4 * pi);
+                    return Math.abs(y2 - Math.sin(x2) - 1.0) < 0.1;
+                }
+            }
+        );
+
+    public static Animation sumOfSines(int n) {
+        return convertToAnim(
+            new YesNo() {
+                public String msg() { return "Σ sin(kx): Sum of " + n + " sines"; }
+
+                public boolean onLocus(int x, int y, int t) {
+                    double pi = Math.PI;
+                    double x2 = (x + 3*t) / (2*pi);
+                    double y2 = y / (4 * pi);
+                    double v = 0;
+                    for(int i = 0; i <= n; ++i) {
+                        v += Math.sin(i * x2);
+                    }
+                    v /= n;
+                    return Math.abs(y2 - v - 1.0) < 0.1;
+                }
+            }
+        );
+    }
+
+    public static Animation sawtoothFourier(int n) {
+        return convertToAnim(
+            new YesNo() {
+                public String msg() { 
+                    return "Σ sin(kx)/k: Sawtooth Fourier series with " + n + " components"; 
+                }
+
+                public boolean onLocus(int x, int y, int t) {
+                    double pi = Math.PI;
+                    double x2 = (x + 3 * t) / (pi);
+                    double y2 = y / (2*pi);
+                    double v = 0;
+                    double f = 0;
+                    for(int i = 1; i <= n; ++i) {
+                        v += Math.sin(i * x2 / 2) / i;
+                        f += (1.0/i);
+                    }
+                    v /= f;
+                    double err = Math.abs(y2 - v);
+                    return Math.abs(err - 2) < 0.5;
+                }
+            }
+        );        
+    }
+
+    // Precursor to some "snake game", methinks.
+    static final int MARQUEE_LENGTH = 20;
+    static final Animation MARQUEE_ARROWS = new Animation () {
+            public String msg() { return ""; }
+
+            public String frame(int t) {
+                t = t % SCREEN_WIDTH;
+
+                String sp  = U.spaces(t);
+                String post = U.repeat(">", MARQUEE_LENGTH);
+                String r = sp + post, pre = "";
+
+                //Wrap around.
+                if(r.length() > SCREEN_WIDTH) {
+                    pre = r.substring(SCREEN_WIDTH);
+                    r = r.substring(0, SCREEN_WIDTH - pre.length());
+                }            
+                String ret = pre + r;
+
+                return U.repeat("\n", 15) + ret;
+            }
+        };
+
+    // This is hacky, but works.
+    static final Animation TORUS_SNAKE = new Animation () {
+            public String msg() { return ""; }
+
+            public String frame(int t) {
+                int x = t % SCREEN_WIDTH;
+
+                String sp  = U.spaces(x);
+                String post = U.repeat("o", MARQUEE_LENGTH - 1) + ">";
+                String r = sp + post, pre = "";
+
+                //Wrap around.
+                if(r.length() > SCREEN_WIDTH) {
+                    pre = r.substring(SCREEN_WIDTH);
+                    r = r.substring(0, SCREEN_WIDTH - pre.length());
+                }
+
+                if(r.trim().length() < 20) { //cut-off
+                    String r2 = r.trim();
+                    r = U.spaces(SCREEN_WIDTH - r2.length()) + r2;
+                }
+
+                String ret = r + U.spaces(SCREEN_WIDTH - r.length()) + "\n" + pre;
+
+                return U.repeat("\n", t / SCREEN_WIDTH) + ret;
+            }
+        };
+
+    // This is hacky, but works too.
+    static final VariableDelayAnimation TORUS_SNAKE_VD = new VariableDelayAnimation () {
+            public String msg() { return ""; }
+
+            public int delay(int t) {
+                t %= SCREEN_WIDTH;
+                return (int)(0.1 * (Math.abs(SCREEN_WIDTH / 2 - t)));
+            }
+
+            public String frame(int t) {
+                int x = t % SCREEN_WIDTH;
+                t = t % ((SCREEN_HEIGHT - 1) * SCREEN_WIDTH);
+
+                String sp  = U.spaces(x);
+                String post = U.repeat(">", MARQUEE_LENGTH - 1) + ">";
+                String r = sp + post, pre = "";
+
+                //Wrap around.
+                if(r.length() > SCREEN_WIDTH) {
+                    pre = r.substring(SCREEN_WIDTH);
+                    r = r.substring(0, SCREEN_WIDTH - pre.length());
+                }
+
+                if(r.trim().length() < 20) { //cut-off
+                    String r2 = r.trim();
+                    r = U.spaces(SCREEN_WIDTH - r2.length()) + r2;
+                }
+
+                String ret = r + U.spaces(SCREEN_WIDTH - r.length()) + "\n" + pre;
+
+                return U.repeat("\n", t / SCREEN_WIDTH) + ret;
+            }
+        };
+}

@@ -1,0 +1,92 @@
+public class AnimMain {
+    static void main() {
+        Terminal term = new Terminal(10, 5000);
+        
+        term.displayAndSleep("Please switch to fullscreen.");
+        
+        term.fadeOutRandom(50);
+        
+        term.displayLinewiseEndDelay("Welcome to\n"
+                                   + "a promotional preview of\n"
+                                   + "mrkgnao\'s Animation Package v0.1.3\n"
+                                   + "(aka Soham Chowdhury / octatoan / awesoham / Lewis Carroll /                 \n \n \n \n", 500, 1500);
+        
+        term.displayAndSleep("Welcome to\n"
+                                   + "a promotional preview of\n"
+                                   + "mrkgnao\'s Animation Package v0.1.3\n"
+                                   + "(aka Soham Chowdhury / octatoan / awesoham / Lewis Carroll / Nigerian Prince)\n \n \n \n", 1000);   
+                                   
+        term.displayAndSleep("Welcome to\n"
+                                   + "a promotional preview of\n"
+                                   + "mrkgnao\'s Animation Package v0.1.3\n"
+                                   + "(aka Soham Chowdhury / octatoan / awesoham / Lewis Carroll / Nigerian Prince)\n"
+                                   + "(that last unkind one courtesy S. Basu and I. Mehra)\n \n \n", 500); 
+                                   
+        term.displayAndSleep("Welcome to\n"
+                                   + "a promotional preview of\n"
+                                   + "mrkgnao\'s Animation Package v0.1.3\n"
+                                   + "(aka Soham Chowdhury / octatoan / awesoham / Lewis Carroll / Nigerian Prince)\n"
+                                   + "(that last unkind one courtesy Messrs. S. Basu and I. Mehra)\n"
+                                   + "\nSoon available at a computer near you!", 3000);
+                                   
+        term.fadeOutRandom(5);       
+        
+        term.displayAndSleep("Let\'s get the ball rolling with a simple sine wave.");
+        
+        term.animate(Animations.sumOfSines(1), 0, 200);
+        term.fadeOutRandom(20, 10);
+        
+        term.displayLinewise("You can add up two sine waves of different frequencies.\nLet\'s try sin x + sin 2x:");
+        term.fadeOutRandom(5);
+        term.animate(Animations.sumOfSines(2), 0, 200);
+        term.fadeOutRandom(20, 10);
+        
+        term.displayAndSleep("This is a very powerful idea, although it may seem quite simple.");
+                                   
+        term.displayAndSleep("For instance, we can use \"Fourier series\"\n"
+                           + "to approximate weird-looking graphs with a sum of sine and cosine waves.\n");
+        term.fadeOutRandom(2);
+        
+        term.displayAndSleep("Let's try to approximate a sawtooth wave (very badly)\n"
+                           + "with a sum of sine waves.");
+        term.fadeOutLinear(2);
+                           
+        term.displayAndSleep("A sawtooth wave is given by the (convergent) series\n"
+                           + "sin x + (sin 2x)/2 + (sin 3x)/3 + ···");
+        term.fadeOutLinear(2);                           
+        
+        term.displayAndSleep("We will first sum one term, then two, then three,\n"
+                           + "and so on, slowly reaching a somewhat respectable\n"
+                           + "likeness of a sawtooth wave.");
+        term.fadeOutLinear(2);           
+        
+        term.displayAndSleep("Watch.", 500);
+        
+        term.fadeOutLinear(10);        
+        
+        for(int i = 1; i < 8; ++i) {
+           term.animate(Animations.sawtoothFourier(i), 0, 50);
+        }
+        term.fadeOutRandom(20, 10);
+        
+        term.displayLinewiseEndDelay("It basically looks the same after that.\nHopefully that looked cool.", 500, 3000);
+        term.fadeOutRandom(2);
+        
+        term.displayAndSleep("Next, behold a snake.\n"
+                           + "Although recreating the classic Nokia snake game is left\n"
+                           + "as an exercise to the interested reader (ahem),\n"
+                           + "this one does wrap around the screen!");
+        term.fadeOutRandom(2);
+        
+        term.displayAndSleep("(And it changes its speed, to boot!)\n", 1500);                   
+        term.fadeOutRandom(2);   
+        
+        term.animateVD(Animations.TORUS_SNAKE_VD, 0, 168*31);
+        term.fadeOutRandom(20, 10);
+        
+        term.displayAndSleep("That\'s all for now, folks!");
+        term.fadeOutRandom(50);
+        
+        System.exit(0);
+    }
+}
